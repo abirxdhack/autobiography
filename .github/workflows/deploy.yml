@@ -23,17 +23,25 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up GitHub Pages
+        id: pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Collect the website files
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
         run: |
           mkdir _site
           rsync -a --exclude '.git' --exclude '.github' --exclude '_site' --exclude 'database' --exclude 'README.md' --exclude '.gitignore' ./ _site/
           test -f _site/index.html
           test -f _site/404.html
+          SITE_URL="${SITE_URL%/}"
+          find _site -type f \( -name '*.html' -o -name '*.xml' -o -name '*.txt' \) -exec sed -i "s#https://abirxdhack.github.io/autobiography-#${SITE_URL}#g" {} +
+          ! grep -rl "github.io/autobiography-/" _site
 
       - name: Upload the website
         uses: actions/upload-pages-artifact@v3
